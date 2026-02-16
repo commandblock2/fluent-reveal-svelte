@@ -1,47 +1,97 @@
 <script lang="ts">
-  import svelteLogo from './assets/svelte.svg'
-  import viteLogo from '/vite.svg'
-  import Counter from './lib/Counter.svelte'
+  import { revealBorder } from './lib/actions/revealBorder'
+  import { revealContainer } from './lib/actions/revealContainer'
+  import DemoControlBody from './lib/demo/DemoControlBody.svelte'
+  import { denseToolbarControls, matrixControls } from './lib/demo/controls'
+  import { effectSignature } from './lib/demo/types'
+  import './lib/styles/reveal.css'
+
+  let radius = $state(96)
+  let cacheRects = $state(true)
+  let clickEffect = $state(true)
+  let debug = $state(false)
+
+  const containerOptions = $derived({
+    radius,
+    cacheRects,
+    clickEffect,
+    debug,
+    borderColor: 'rgba(255, 178, 109, 0.94)',
+    hoverColor: 'rgba(115, 220, 255, 0.22)',
+    clickColor: 'rgba(255, 243, 213, 0.55)',
+  })
 </script>
 
-<main>
-  <div>
-    <a href="https://vite.dev" target="_blank" rel="noreferrer">
-      <img src={viteLogo} class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
-  </div>
-  <h1>Vite + Svelte</h1>
+<main class="page">
+  <section class="hero">
+    <p class="eyebrow">Actions-first reveal runtime</p>
+    <h1>Fluent Reveal Playground</h1>
+    <p class="subtitle">
+      Border, hover, and click effects are independently toggled per control in one container.
+      The matrix shows all 8 combinations, and the dense toolbar exposes pointer stress behavior.
+    </p>
+  </section>
 
-  <div class="card">
-    <Counter />
-  </div>
+  <section class="knobs">
+    <label>
+      Radius
+      <input type="range" min="40" max="180" step="1" bind:value={radius} />
+      <span>{radius}px</span>
+    </label>
 
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme" target="_blank" rel="noreferrer">SvelteKit</a>, the official Svelte app framework powered by Vite!
-  </p>
+    <label>
+      Cache rects
+      <input type="checkbox" bind:checked={cacheRects} />
+    </label>
 
-  <p class="read-the-docs">
-    Click on the Vite and Svelte logos to learn more
-  </p>
+    <label>
+      Click effect
+      <input type="checkbox" bind:checked={clickEffect} />
+    </label>
+
+    <label>
+      Debug dataset
+      <input type="checkbox" bind:checked={debug} />
+    </label>
+  </section>
+
+  <section class="surface" use:revealContainer={containerOptions}>
+    <div class="matrix-grid">
+      {#each matrixControls as control}
+        <article class="matrix-cell">
+          <header>
+            <h2>{control.label}</h2>
+            <span class="signature">{effectSignature(control.fx)}</span>
+          </header>
+          <p>{control.note}</p>
+
+          {#if control.fx.border}
+            <div class="control-border" use:revealBorder={{ id: `${control.id}-border` }}>
+              <DemoControlBody {control} />
+            </div>
+          {:else}
+            <DemoControlBody {control} />
+          {/if}
+        </article>
+      {/each}
+    </div>
+
+    <section class="toolbar">
+      <header>
+        <h3>Dense Toolbar</h3>
+        <p>Mixed control types in a compressed row for proximity/intersection checks.</p>
+      </header>
+      <div class="toolbar-row">
+        {#each denseToolbarControls as control}
+          {#if control.fx.border}
+            <div class="control-border dense-border" use:revealBorder={{ id: `${control.id}-border` }}>
+              <DemoControlBody {control} dense={true} />
+            </div>
+          {:else}
+            <DemoControlBody {control} dense={true} />
+          {/if}
+        {/each}
+      </div>
+    </section>
+  </section>
 </main>
-
-<style>
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
-  }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
-  }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
-  }
-  .read-the-docs {
-    color: #888;
-  }
-</style>
