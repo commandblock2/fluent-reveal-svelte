@@ -30,7 +30,7 @@
   })
 
   const generalSettings = $state({
-    controlRadius: 12,
+    controlRadius: 0,
     cacheRects: true,
     debug: false,
   })
@@ -52,7 +52,7 @@
   const clickSettings = $state({
     enabled: true,
     rippleEnabled: true,
-    colorHex: '#fff3d5',
+    colorHex: '#e01b24',
     colorAlphaPercent: 55,
     pressScale: 0.98,
     pressTransitionMs: 96,
@@ -69,7 +69,7 @@
 
   const librarySettings = $state({
     query: '',
-    gapPercent: 100,
+    gapPercent: 0,
   })
 
   const toRgba = (hex: string, alpha: number, fallbackHex: string): string => {
