@@ -35,11 +35,36 @@ type ItemRecord = {
 
 const DEFAULT_OPTIONS: NormalizedRevealContainerOptions = {
   enabled: true,
-  radius: 90,
-  borderColor: 'rgba(147, 229, 255, 0.88)',
-  hoverColor: 'rgba(127, 225, 255, 0.2)',
-  clickColor: 'rgba(255, 249, 223, 0.54)',
-  clickEffect: true,
+  border: {
+    radius: 90,
+    color: 'rgba(147, 229, 255, 0.88)',
+    widthPx: 1,
+    fadeStopPct: 72,
+    transitionMs: 180,
+  },
+  hover: {
+    color: 'rgba(127, 225, 255, 0.2)',
+  },
+  click: {
+    enabled: true,
+    color: 'rgba(255, 249, 223, 0.54)',
+    press: {
+      scale: 0.98,
+      transitionMs: 96,
+    },
+    ripple: {
+      enabled: true,
+      durationMs: 980,
+      sizePx: 24,
+      startScale: 0.2,
+      endScale: 3.2,
+      startOpacity: 0.52,
+      midOpacity: 0.2,
+      endOpacity: 0.18,
+      coreStrength: 74,
+      midStrength: 42,
+    },
+  },
   throttle: 'raf',
   cacheRects: true,
   debug: false,
@@ -51,24 +76,90 @@ function fail(message: string): never {
   throw new Error(`[fluent-reveal] ${message}`)
 }
 
+function clampNumber(value: number | undefined, min: number, max: number, fallback: number): number {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return fallback
+  }
+
+  if (value < min) {
+    return min
+  }
+
+  if (value > max) {
+    return max
+  }
+
+  return value
+}
+
 function normalizeContainerOptions(
   options: RevealContainerOptions | undefined,
 ): NormalizedRevealContainerOptions {
   if (!options) {
-    return { ...DEFAULT_OPTIONS }
+    return {
+      ...DEFAULT_OPTIONS,
+      border: { ...DEFAULT_OPTIONS.border },
+      hover: { ...DEFAULT_OPTIONS.hover },
+      click: {
+        ...DEFAULT_OPTIONS.click,
+        press: { ...DEFAULT_OPTIONS.click.press },
+        ripple: { ...DEFAULT_OPTIONS.click.ripple },
+      },
+    }
   }
 
   if (options.throttle && options.throttle !== 'raf') {
     fail(`Unsupported throttle "${String(options.throttle)}". Use "raf".`)
   }
 
+  const border = options.border
+  const hover = options.hover
+  const click = options.click
+  const press = click?.press
+  const ripple = click?.ripple
+
   return {
     enabled: options.enabled ?? DEFAULT_OPTIONS.enabled,
-    radius: options.radius ?? DEFAULT_OPTIONS.radius,
-    borderColor: options.borderColor ?? DEFAULT_OPTIONS.borderColor,
-    hoverColor: options.hoverColor ?? DEFAULT_OPTIONS.hoverColor,
-    clickColor: options.clickColor ?? DEFAULT_OPTIONS.clickColor,
-    clickEffect: options.clickEffect ?? DEFAULT_OPTIONS.clickEffect,
+    border: {
+      radius: clampNumber(border?.radius, 0, 600, DEFAULT_OPTIONS.border.radius),
+      color: border?.color ?? DEFAULT_OPTIONS.border.color,
+      widthPx: clampNumber(border?.widthPx, 0, 16, DEFAULT_OPTIONS.border.widthPx),
+      fadeStopPct: clampNumber(border?.fadeStopPct, 10, 100, DEFAULT_OPTIONS.border.fadeStopPct),
+      transitionMs: clampNumber(border?.transitionMs, 0, 2000, DEFAULT_OPTIONS.border.transitionMs),
+    },
+    hover: {
+      color: hover?.color ?? DEFAULT_OPTIONS.hover.color,
+    },
+    click: {
+      enabled: click?.enabled ?? DEFAULT_OPTIONS.click.enabled,
+      color: click?.color ?? DEFAULT_OPTIONS.click.color,
+      press: {
+        scale: clampNumber(press?.scale, 0.8, 1, DEFAULT_OPTIONS.click.press.scale),
+        transitionMs: clampNumber(
+          press?.transitionMs,
+          0,
+          1000,
+          DEFAULT_OPTIONS.click.press.transitionMs,
+        ),
+      },
+      ripple: {
+        enabled: ripple?.enabled ?? DEFAULT_OPTIONS.click.ripple.enabled,
+        durationMs: clampNumber(ripple?.durationMs, 120, 4000, DEFAULT_OPTIONS.click.ripple.durationMs),
+        sizePx: clampNumber(ripple?.sizePx, 4, 240, DEFAULT_OPTIONS.click.ripple.sizePx),
+        startScale: clampNumber(ripple?.startScale, 0.05, 2.5, DEFAULT_OPTIONS.click.ripple.startScale),
+        endScale: clampNumber(ripple?.endScale, 0.2, 8, DEFAULT_OPTIONS.click.ripple.endScale),
+        startOpacity: clampNumber(
+          ripple?.startOpacity,
+          0,
+          1,
+          DEFAULT_OPTIONS.click.ripple.startOpacity,
+        ),
+        midOpacity: clampNumber(ripple?.midOpacity, 0, 1, DEFAULT_OPTIONS.click.ripple.midOpacity),
+        endOpacity: clampNumber(ripple?.endOpacity, 0, 1, DEFAULT_OPTIONS.click.ripple.endOpacity),
+        coreStrength: clampNumber(ripple?.coreStrength, 0, 100, DEFAULT_OPTIONS.click.ripple.coreStrength),
+        midStrength: clampNumber(ripple?.midStrength, 0, 100, DEFAULT_OPTIONS.click.ripple.midStrength),
+      },
+    },
     throttle: 'raf',
     cacheRects: options.cacheRects ?? DEFAULT_OPTIONS.cacheRects,
     debug: options.debug ?? DEFAULT_OPTIONS.debug,
@@ -166,7 +257,7 @@ export class RevealContainerController {
   }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
-    if (!this.options.enabled || !this.options.clickEffect) {
+    if (!this.options.enabled || !this.options.click.enabled) {
       return
     }
 
@@ -176,30 +267,47 @@ export class RevealContainerController {
       this.refreshRects()
     }
 
+    this.lastPointer = {
+      x: event.clientX,
+      y: event.clientY,
+      target: event.target,
+    }
+
     const targetKey = this.resolveItemKeyFromTarget(event.target, (item) => item.flags.click)
     if (!targetKey) {
+      this.clearPressedState()
       return
     }
 
     const item = this.itemsByKey.get(targetKey)
     if (!item) {
+      this.clearPressedState()
       return
+    }
+
+    if (this.pressedItemKey && this.pressedItemKey !== targetKey) {
+      this.clearPressedState()
     }
 
     const localX = event.clientX - item.rect.left
     const localY = event.clientY - item.rect.top
 
-    item.node.style.setProperty('--click-origin-x', `${Math.round(localX)}px`)
-    item.node.style.setProperty('--click-origin-y', `${Math.round(localY)}px`)
+    item.node.style.setProperty('--click-origin-x', `${localX}px`)
+    item.node.style.setProperty('--click-origin-y', `${localY}px`)
 
-    item.node.classList.remove('reveal-pressed')
-    void item.node.offsetWidth
+    item.node.classList.remove('reveal-ripple-active', 'reveal-ripple-static')
+    if (this.options.click.ripple.enabled) {
+      void item.node.offsetWidth
+      item.node.classList.add('reveal-ripple-active')
+    }
+
     item.node.classList.add('reveal-pressed')
     this.pressedItemKey = targetKey
+    this.scheduleFrame()
   }
 
   private readonly onPointerUp = (): void => {
-    this.pressedItemKey = null
+    this.clearPressedState()
   }
 
   private readonly onPointerCancel = (): void => {
@@ -207,7 +315,7 @@ export class RevealContainerController {
   }
 
   private readonly onAnimationEnd = (event: AnimationEvent): void => {
-    if (event.animationName !== 'reveal-click-pulse') {
+    if (event.animationName !== 'reveal-click-follow') {
       return
     }
 
@@ -216,10 +324,13 @@ export class RevealContainerController {
       return
     }
 
-    target.classList.remove('reveal-pressed')
-    const key = this.itemKeyByNode.get(target)
-    if (key && this.pressedItemKey === key) {
-      this.pressedItemKey = null
+    if (!target.classList.contains('reveal-ripple-active')) {
+      return
+    }
+
+    target.classList.remove('reveal-ripple-active')
+    if (this.options.click.ripple.enabled) {
+      target.classList.add('reveal-ripple-static')
     }
   }
 
@@ -262,6 +373,12 @@ export class RevealContainerController {
     this.assertAlive()
     this.options = normalizeContainerOptions(options)
     this.applyContainerOptions()
+    if (!this.options.click.enabled) {
+      this.clearPressedState()
+      this.clearRippleState()
+    } else if (!this.options.click.ripple.enabled) {
+      this.clearRippleState()
+    }
     this.invalidateLayout()
     this.scheduleFrame()
   }
@@ -436,7 +553,7 @@ export class RevealContainerController {
     }
 
     if (!record.flags.click) {
-      record.node.classList.remove('reveal-pressed')
+      record.node.classList.remove('reveal-pressed', 'reveal-ripple-active', 'reveal-ripple-static')
       if (this.pressedItemKey === record.key) {
         this.pressedItemKey = null
       }
@@ -470,7 +587,13 @@ export class RevealContainerController {
       this.pressedItemKey = null
     }
 
-    record.node.classList.remove('reveal-item', 'reveal-hover', 'reveal-pressed')
+    record.node.classList.remove(
+      'reveal-item',
+      'reveal-hover',
+      'reveal-pressed',
+      'reveal-ripple-active',
+      'reveal-ripple-static',
+    )
     record.node.style.removeProperty('--item-fx-x')
     record.node.style.removeProperty('--item-fx-y')
     record.node.style.removeProperty('--click-origin-x')
@@ -503,6 +626,7 @@ export class RevealContainerController {
     this.clearBorderVisibility()
     this.clearHoverState()
     this.clearPressedState()
+    this.clearRippleState()
 
     for (const border of this.bordersByKey.values()) {
       border.node.classList.remove('reveal-visible')
@@ -512,7 +636,13 @@ export class RevealContainerController {
     }
 
     for (const item of this.itemsByKey.values()) {
-      item.node.classList.remove('reveal-item', 'reveal-hover', 'reveal-pressed')
+      item.node.classList.remove(
+        'reveal-item',
+        'reveal-hover',
+        'reveal-pressed',
+        'reveal-ripple-active',
+        'reveal-ripple-static',
+      )
       item.node.style.removeProperty('--item-fx-x')
       item.node.style.removeProperty('--item-fx-y')
       item.node.style.removeProperty('--click-origin-x')
@@ -524,9 +654,24 @@ export class RevealContainerController {
     this.node.style.removeProperty('--fx-y')
     this.node.style.removeProperty('--reveal-radius')
     this.node.style.removeProperty('--reveal-border-color')
+    this.node.style.removeProperty('--reveal-border-width')
+    this.node.style.removeProperty('--reveal-border-fade-stop')
+    this.node.style.removeProperty('--reveal-border-transition')
     this.node.style.removeProperty('--reveal-hover-color')
     this.node.style.removeProperty('--reveal-click-color')
+    this.node.style.removeProperty('--reveal-press-scale')
+    this.node.style.removeProperty('--reveal-press-transition')
+    this.node.style.removeProperty('--reveal-ripple-duration')
+    this.node.style.removeProperty('--reveal-ripple-size')
+    this.node.style.removeProperty('--reveal-ripple-start-scale')
+    this.node.style.removeProperty('--reveal-ripple-end-scale')
+    this.node.style.removeProperty('--reveal-ripple-start-opacity')
+    this.node.style.removeProperty('--reveal-ripple-mid-opacity')
+    this.node.style.removeProperty('--reveal-ripple-end-opacity')
+    this.node.style.removeProperty('--reveal-ripple-core-strength')
+    this.node.style.removeProperty('--reveal-ripple-mid-strength')
     delete this.node.dataset.revealDebug
+    delete this.node.dataset.revealRipple
 
     this.bordersByKey.clear()
     this.itemsByKey.clear()
@@ -544,6 +689,8 @@ export class RevealContainerController {
     this.node.addEventListener('pointerup', this.onPointerUp)
     this.node.addEventListener('pointercancel', this.onPointerCancel)
     this.node.addEventListener('animationend', this.onAnimationEnd)
+    window.addEventListener('pointerup', this.onPointerUp, { passive: true })
+    window.addEventListener('pointercancel', this.onPointerCancel, { passive: true })
     window.addEventListener('resize', this.onWindowLayoutShift, { passive: true })
     window.addEventListener('scroll', this.onWindowLayoutShift, { passive: true })
   }
@@ -556,6 +703,8 @@ export class RevealContainerController {
     this.node.removeEventListener('pointerup', this.onPointerUp)
     this.node.removeEventListener('pointercancel', this.onPointerCancel)
     this.node.removeEventListener('animationend', this.onAnimationEnd)
+    window.removeEventListener('pointerup', this.onPointerUp)
+    window.removeEventListener('pointercancel', this.onPointerCancel)
     window.removeEventListener('resize', this.onWindowLayoutShift)
     window.removeEventListener('scroll', this.onWindowLayoutShift)
   }
@@ -641,7 +790,12 @@ export class RevealContainerController {
         continue
       }
 
-      const nextVisible = intersectsRectRadius(border.rect, pointer.x, pointer.y, this.options.radius)
+      const nextVisible = intersectsRectRadius(
+        border.rect,
+        pointer.x,
+        pointer.y,
+        this.options.border.radius,
+      )
       if (nextVisible !== border.visible) {
         border.visible = nextVisible
         border.node.classList.toggle('reveal-visible', nextVisible)
@@ -649,6 +803,7 @@ export class RevealContainerController {
     }
 
     this.updateHoverState(pointer, pointer.target)
+    this.updatePressedPointer(pointer)
   }
 
   private refreshRects(): void {
@@ -695,6 +850,23 @@ export class RevealContainerController {
 
     hoveredItem.node.style.setProperty('--item-fx-x', `${localX}px`)
     hoveredItem.node.style.setProperty('--item-fx-y', `${localY}px`)
+  }
+
+  private updatePressedPointer(pointer: PointerPoint): void {
+    if (!this.pressedItemKey) {
+      return
+    }
+
+    const pressedItem = this.itemsByKey.get(this.pressedItemKey)
+    if (!pressedItem || !pressedItem.flags.click) {
+      this.clearPressedState()
+      return
+    }
+
+    const localX = pointer.x - pressedItem.rect.left
+    const localY = pointer.y - pressedItem.rect.top
+    pressedItem.node.style.setProperty('--click-origin-x', `${localX}px`)
+    pressedItem.node.style.setProperty('--click-origin-y', `${localY}px`)
   }
 
   private resolveItemKeyFromTarget(
@@ -789,15 +961,36 @@ export class RevealContainerController {
     }
 
     const pressed = this.itemsByKey.get(this.pressedItemKey)
-    pressed?.node.classList.remove('reveal-pressed')
+    pressed?.node.classList.remove('reveal-pressed', 'reveal-ripple-active', 'reveal-ripple-static')
     this.pressedItemKey = null
   }
 
+  private clearRippleState(): void {
+    for (const item of this.itemsByKey.values()) {
+      item.node.classList.remove('reveal-ripple-active', 'reveal-ripple-static')
+    }
+  }
+
   private applyContainerOptions(): void {
-    this.node.style.setProperty('--reveal-radius', `${Math.max(0, this.options.radius)}px`)
-    this.node.style.setProperty('--reveal-border-color', this.options.borderColor)
-    this.node.style.setProperty('--reveal-hover-color', this.options.hoverColor)
-    this.node.style.setProperty('--reveal-click-color', this.options.clickColor)
+    this.node.style.setProperty('--reveal-radius', `${Math.max(0, this.options.border.radius)}px`)
+    this.node.style.setProperty('--reveal-border-color', this.options.border.color)
+    this.node.style.setProperty('--reveal-border-width', `${this.options.border.widthPx}px`)
+    this.node.style.setProperty('--reveal-border-fade-stop', `${this.options.border.fadeStopPct}%`)
+    this.node.style.setProperty('--reveal-border-transition', `${this.options.border.transitionMs}ms`)
+    this.node.style.setProperty('--reveal-hover-color', this.options.hover.color)
+    this.node.style.setProperty('--reveal-click-color', this.options.click.color)
+    this.node.style.setProperty('--reveal-press-scale', `${this.options.click.press.scale}`)
+    this.node.style.setProperty('--reveal-press-transition', `${this.options.click.press.transitionMs}ms`)
+    this.node.style.setProperty('--reveal-ripple-duration', `${this.options.click.ripple.durationMs}ms`)
+    this.node.style.setProperty('--reveal-ripple-size', `${this.options.click.ripple.sizePx}px`)
+    this.node.style.setProperty('--reveal-ripple-start-scale', `${this.options.click.ripple.startScale}`)
+    this.node.style.setProperty('--reveal-ripple-end-scale', `${this.options.click.ripple.endScale}`)
+    this.node.style.setProperty('--reveal-ripple-start-opacity', `${this.options.click.ripple.startOpacity}`)
+    this.node.style.setProperty('--reveal-ripple-mid-opacity', `${this.options.click.ripple.midOpacity}`)
+    this.node.style.setProperty('--reveal-ripple-end-opacity', `${this.options.click.ripple.endOpacity}`)
+    this.node.style.setProperty('--reveal-ripple-core-strength', `${this.options.click.ripple.coreStrength}%`)
+    this.node.style.setProperty('--reveal-ripple-mid-strength', `${this.options.click.ripple.midStrength}%`)
+    this.node.dataset.revealRipple = this.options.click.ripple.enabled ? 'on' : 'off'
     if (this.options.debug) {
       this.node.dataset.revealDebug = 'true'
     } else {
