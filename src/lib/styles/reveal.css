@@ -1,6 +1,6 @@
 .reveal-container {
   --reveal-radius: 90px;
-  --reveal-border-color: rgba(147, 229, 255, 0.88);
+  --reveal-border-color: rgba(255, 178, 109, 0.94);
   --reveal-hover-color: rgba(127, 225, 255, 0.2);
   --reveal-click-color: rgba(255, 249, 223, 0.54);
   --fx-x: -9999px;
@@ -11,6 +11,7 @@
 .reveal-border-host {
   position: relative;
   border-radius: inherit;
+  isolation: isolate;
 }
 
 .reveal-border-host::before {
@@ -21,6 +22,7 @@
   padding: 1px;
   pointer-events: none;
   opacity: 0;
+  z-index: 2;
   transition: opacity 180ms ease;
   background: radial-gradient(
     circle var(--reveal-radius) at calc(var(--fx-x) - var(--reveal-host-left, 0px))
@@ -33,6 +35,11 @@
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
+}
+
+.reveal-border-host > * {
+  position: relative;
+  z-index: 1;
 }
 
 .reveal-border-host.reveal-visible::before {
@@ -69,26 +76,33 @@
 }
 
 .reveal-item::after {
-  opacity: 0;
+  opacity: 0.001;
+  transform: scale(0.12);
+  transform-origin: var(--click-origin-x, 50%) var(--click-origin-y, 50%);
+  z-index: 2;
   background: radial-gradient(
-    circle 0px at var(--click-origin-x, 50%) var(--click-origin-y, 50%),
-    color-mix(in oklab, var(--reveal-click-color) 68%, #ffffff 32%),
+    circle 36% at var(--click-origin-x, 50%) var(--click-origin-y, 50%),
+    color-mix(in oklab, var(--reveal-click-color) 88%, #ffffff 12%),
+    color-mix(in oklab, var(--reveal-click-color) 52%, #ffffff 48%) 34%,
     transparent 72%
   );
 }
 
 .reveal-item.reveal-pressed::after {
-  animation: reveal-click-pulse 340ms ease-out forwards;
+  animation: reveal-click-pulse 340ms cubic-bezier(0.2, 0.74, 0.32, 1) forwards;
 }
 
 @keyframes reveal-click-pulse {
   0% {
-    opacity: 0.6;
-    background-size: 0% 0%;
+    opacity: 0.88;
+    transform: scale(0.12);
+  }
+  68% {
+    opacity: 0.38;
   }
   100% {
     opacity: 0;
-    background-size: 240% 240%;
+    transform: scale(2.6);
   }
 }
 
@@ -103,4 +117,3 @@
     opacity: 0.28;
   }
 }
-

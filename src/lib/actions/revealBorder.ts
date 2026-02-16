@@ -5,21 +5,49 @@ import type { RevealBorderOptions } from '../core/types'
 const DEFAULT_OPTIONS: RevealBorderOptions = {}
 
 export const revealBorder: Action<HTMLElement, RevealBorderOptions | undefined> = (node, options) => {
-  const container = findNearestRevealContainer(node.parentElement)
-  if (!container) {
-    throw new Error('[fluent-reveal] revealBorder requires an ancestor with use:revealContainer.')
+  const owner = Symbol('reveal-border')
+  let container = findNearestRevealContainer(node.parentElement)
+  let destroyed = false
+  let registered = false
+  let currentOptions = options ?? DEFAULT_OPTIONS
+
+  const register = (): void => {
+    if (destroyed || registered) {
+      return
+    }
+
+    container = container ?? findNearestRevealContainer(node.parentElement)
+    if (!container) {
+      throw new Error('[fluent-reveal] revealBorder requires an ancestor with use:revealContainer.')
+    }
+
+    container.registerBorder(node, currentOptions, owner)
+    registered = true
   }
 
-  const owner = Symbol('reveal-border')
-  container.registerBorder(node, options ?? DEFAULT_OPTIONS, owner)
+  if (container) {
+    register()
+  } else {
+    queueMicrotask(() => {
+      if (destroyed || registered) {
+        return
+      }
+      register()
+    })
+  }
 
   return {
     update(nextOptions) {
-      container.updateBorder(owner, nextOptions ?? DEFAULT_OPTIONS)
+      currentOptions = nextOptions ?? DEFAULT_OPTIONS
+      if (registered && container) {
+        container.updateBorder(owner, currentOptions)
+      }
     },
     destroy() {
-      container.unregisterBorder(owner)
+      destroyed = true
+      if (registered && container) {
+        container.unregisterBorder(owner)
+      }
     },
   }
 }
-

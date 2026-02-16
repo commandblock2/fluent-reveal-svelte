@@ -629,8 +629,8 @@ export class RevealContainerController {
       return
     }
 
-    this.node.style.setProperty('--fx-x', `${Math.round(pointer.x - this.containerRect.left)}px`)
-    this.node.style.setProperty('--fx-y', `${Math.round(pointer.y - this.containerRect.top)}px`)
+    this.node.style.setProperty('--fx-x', `${pointer.x - this.containerRect.left}px`)
+    this.node.style.setProperty('--fx-y', `${pointer.y - this.containerRect.top}px`)
 
     for (const border of this.bordersByKey.values()) {
       if (border.activeBorderItems === 0) {
@@ -656,8 +656,8 @@ export class RevealContainerController {
 
     for (const border of this.bordersByKey.values()) {
       border.rect = border.node.getBoundingClientRect()
-      border.node.style.setProperty('--reveal-host-left', `${Math.round(border.rect.left - this.containerRect.left)}px`)
-      border.node.style.setProperty('--reveal-host-top', `${Math.round(border.rect.top - this.containerRect.top)}px`)
+      border.node.style.setProperty('--reveal-host-left', `${border.rect.left - this.containerRect.left}px`)
+      border.node.style.setProperty('--reveal-host-top', `${border.rect.top - this.containerRect.top}px`)
     }
 
     for (const item of this.itemsByKey.values()) {
@@ -693,8 +693,8 @@ export class RevealContainerController {
     const localX = pointer.x - hoveredItem.rect.left
     const localY = pointer.y - hoveredItem.rect.top
 
-    hoveredItem.node.style.setProperty('--item-fx-x', `${Math.round(localX)}px`)
-    hoveredItem.node.style.setProperty('--item-fx-y', `${Math.round(localY)}px`)
+    hoveredItem.node.style.setProperty('--item-fx-x', `${localX}px`)
+    hoveredItem.node.style.setProperty('--item-fx-y', `${localY}px`)
   }
 
   private resolveItemKeyFromTarget(
@@ -805,4 +805,3 @@ export class RevealContainerController {
     }
   }
 }
-

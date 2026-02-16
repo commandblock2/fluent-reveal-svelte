@@ -89,6 +89,8 @@ body {
 }
 
 .surface {
+  --control-radius: 12px;
+  --combo-radius: 16px;
   border-radius: 22px;
   padding: clamp(1rem, 2.2vw, 1.6rem);
   border: 1px solid rgba(15, 30, 42, 0.12);
@@ -102,16 +104,23 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 0.85rem;
+  align-items: start;
 }
 
 .matrix-cell {
-  border-radius: 16px;
+  border-radius: var(--combo-radius);
   border: 1px solid rgba(11, 36, 52, 0.11);
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.82);
   display: grid;
   gap: 0.62rem;
+  align-content: start;
   animation: rise-in 360ms ease both;
+}
+
+.matrix-cell > .control-border,
+.matrix-cell > .demo-control {
+  align-self: start;
 }
 
 .matrix-cell header {
@@ -144,7 +153,7 @@ body {
 
 .toolbar {
   margin-top: 1rem;
-  border-radius: 16px;
+  border-radius: var(--combo-radius);
   border: 1px solid rgba(11, 36, 52, 0.11);
   background: rgba(255, 255, 255, 0.78);
   padding: 0.85rem;
@@ -172,10 +181,13 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  align-items: flex-start;
 }
 
 .control-border {
-  border-radius: 12px;
+  display: block;
+  inline-size: 100%;
+  border-radius: var(--control-radius);
 }
 
 .dense-border {
@@ -184,11 +196,11 @@ body {
 
 .demo-control {
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--control-radius);
   min-height: 50px;
-  min-inline-size: 100%;
+  inline-size: 100%;
   padding: 0.55rem 0.7rem;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.65rem;
@@ -239,7 +251,7 @@ body {
 .select-control select {
   inline-size: 100%;
   border: 1px solid rgba(18, 36, 51, 0.18);
-  border-radius: 8px;
+  border-radius: var(--control-radius);
   padding: 0.35rem 0.45rem;
   background: rgba(255, 255, 255, 0.92);
   color: inherit;

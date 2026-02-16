@@ -7,6 +7,7 @@
   import './lib/styles/reveal.css'
 
   let radius = $state(96)
+  let controlRadius = $state(12)
   let cacheRects = $state(true)
   let clickEffect = $state(true)
   let debug = $state(false)
@@ -40,6 +41,12 @@
     </label>
 
     <label>
+      Control radius
+      <input type="range" min="0" max="28" step="1" bind:value={controlRadius} />
+      <span>{controlRadius}px</span>
+    </label>
+
+    <label>
       Cache rects
       <input type="checkbox" bind:checked={cacheRects} />
     </label>
@@ -55,7 +62,12 @@
     </label>
   </section>
 
-  <section class="surface" use:revealContainer={containerOptions}>
+  <section
+    class="surface"
+    style:--control-radius={`${controlRadius}px`}
+    style:--combo-radius={`${controlRadius}px`}
+    use:revealContainer={containerOptions}
+  >
     <div class="matrix-grid">
       {#each matrixControls as control}
         <article class="matrix-cell">

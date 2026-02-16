@@ -22,21 +22,68 @@ function normalizeOptions(options?: RevealItemOptions): RevealItemOptions {
 }
 
 export const revealItem: Action<HTMLElement, RevealItemOptions | undefined> = (node, options) => {
-  const container = findNearestRevealContainer(node.parentElement)
-  if (!container) {
-    throw new Error('[fluent-reveal] revealItem requires an ancestor with use:revealContainer.')
+  const owner = Symbol('reveal-item')
+  let container = findNearestRevealContainer(node.parentElement)
+  let destroyed = false
+  let registered = false
+  let registerRaf = 0
+  let currentOptions = normalizeOptions(options)
+
+  const registerInFrame = (): void => {
+    if (destroyed || registered) {
+      return
+    }
+
+    registerRaf = window.requestAnimationFrame(() => {
+      registerRaf = 0
+      if (destroyed || registered) {
+        return
+      }
+
+      container = container ?? findNearestRevealContainer(node.parentElement)
+      if (!container) {
+        throw new Error('[fluent-reveal] revealItem requires an ancestor with use:revealContainer.')
+      }
+
+      // Border hosts and container are expected to exist by this point. If not, throw immediately.
+      container.registerItem(node, currentOptions, owner)
+      registered = true
+    })
   }
 
-  const owner = Symbol('reveal-item')
-  container.registerItem(node, normalizeOptions(options), owner)
+  if (container) {
+    registerInFrame()
+  } else {
+    queueMicrotask(() => {
+      if (destroyed || registered) {
+        return
+      }
+
+      container = findNearestRevealContainer(node.parentElement)
+      if (!container) {
+        throw new Error('[fluent-reveal] revealItem requires an ancestor with use:revealContainer.')
+      }
+
+      registerInFrame()
+    })
+  }
 
   return {
     update(nextOptions) {
-      container.updateItem(owner, normalizeOptions(nextOptions))
+      currentOptions = normalizeOptions(nextOptions)
+      if (registered && container) {
+        container.updateItem(owner, currentOptions)
+      }
     },
     destroy() {
-      container.unregisterItem(owner)
+      destroyed = true
+      if (registerRaf !== 0) {
+        window.cancelAnimationFrame(registerRaf)
+        registerRaf = 0
+      }
+      if (registered && container) {
+        container.unregisterItem(owner)
+      }
     },
   }
 }
-
