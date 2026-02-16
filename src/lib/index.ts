@@ -7,6 +7,7 @@ export type {
   RevealClickEffectOptions,
   RevealClickPressEffectOptions,
   RevealContainerOptions,
+  RevealFocusEffectOptions,
   RevealHoverEffectOptions,
   RevealItemOptions,
   RevealRippleEffectOptions,

@@ -12,6 +12,16 @@ export type RevealHoverEffectOptions = {
   color?: string
 }
 
+export type RevealFocusEffectOptions = {
+  enabled?: boolean
+  color?: string
+  widthPx?: number
+  offsetPx?: number
+  glowPx?: number
+  pulseDurationMs?: number
+  zIndex?: number
+}
+
 export type RevealClickPressEffectOptions = {
   scale?: number
   transitionMs?: number
@@ -41,6 +51,7 @@ export type RevealContainerOptions = {
   enabled?: boolean
   border?: RevealBorderEffectOptions
   hover?: RevealHoverEffectOptions
+  focus?: RevealFocusEffectOptions
   click?: RevealClickEffectOptions
   throttle?: RafThrottle
   cacheRects?: boolean
@@ -69,6 +80,15 @@ export type NormalizedRevealContainerOptions = {
   }
   hover: {
     color: string
+  }
+  focus: {
+    enabled: boolean
+    color: string
+    widthPx: number
+    offsetPx: number
+    glowPx: number
+    pulseDurationMs: number
+    zIndex: number
   }
   click: {
     enabled: boolean

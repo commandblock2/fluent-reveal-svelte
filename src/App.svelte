@@ -49,6 +49,17 @@
     colorAlphaPercent: 22,
   })
 
+  const focusSettings = $state({
+    enabled: true,
+    colorHex: '#92dcff',
+    colorAlphaPercent: 76,
+    widthPx: 2,
+    offsetPx: 3,
+    glowPx: 14,
+    pulseDurationMs: 1200,
+    zIndex: 12,
+  })
+
   const clickSettings = $state({
     enabled: true,
     rippleEnabled: true,
@@ -108,6 +119,15 @@
     },
     hover: {
       color: toRgba(hoverSettings.colorHex, hoverSettings.colorAlphaPercent / 100, '#73dcff'),
+    },
+    focus: {
+      enabled: focusSettings.enabled,
+      color: toRgba(focusSettings.colorHex, focusSettings.colorAlphaPercent / 100, '#92dcff'),
+      widthPx: focusSettings.widthPx,
+      offsetPx: focusSettings.offsetPx,
+      glowPx: focusSettings.glowPx,
+      pulseDurationMs: focusSettings.pulseDurationMs,
+      zIndex: focusSettings.zIndex,
     },
     click: {
       enabled: clickSettings.enabled,
@@ -356,6 +376,57 @@
         Hover color
         <input type="color" bind:value={hoverSettings.colorHex} />
         <code>{hoverSettings.colorHex}</code>
+      </label>
+    </fieldset>
+
+    <fieldset class="knob-group">
+      <legend>Tab Focus</legend>
+
+      <label>
+        Focus effect
+        <input type="checkbox" bind:checked={focusSettings.enabled} />
+      </label>
+
+      <label>
+        Focus ring width
+        <input type="range" min="0" max="16" step="0.1" bind:value={focusSettings.widthPx} />
+        <span>{focusSettings.widthPx.toFixed(1)}px</span>
+      </label>
+
+      <label>
+        Focus ring offset
+        <input type="range" min="0" max="24" step="0.1" bind:value={focusSettings.offsetPx} />
+        <span>{focusSettings.offsetPx.toFixed(1)}px</span>
+      </label>
+
+      <label>
+        Focus glow radius
+        <input type="range" min="0" max="64" step="1" bind:value={focusSettings.glowPx} />
+        <span>{focusSettings.glowPx}px</span>
+      </label>
+
+      <label>
+        Focus pulse duration
+        <input type="range" min="250" max="4000" step="10" bind:value={focusSettings.pulseDurationMs} />
+        <span>{focusSettings.pulseDurationMs}ms</span>
+      </label>
+
+      <label>
+        Focus z-index
+        <input type="range" min="0" max="1000" step="1" bind:value={focusSettings.zIndex} />
+        <span>{focusSettings.zIndex}</span>
+      </label>
+
+      <label>
+        Focus opacity
+        <input type="range" min="0" max="100" step="1" bind:value={focusSettings.colorAlphaPercent} />
+        <span>{focusSettings.colorAlphaPercent}%</span>
+      </label>
+
+      <label class="knob-color">
+        Focus color
+        <input type="color" bind:value={focusSettings.colorHex} />
+        <code>{focusSettings.colorHex}</code>
       </label>
     </fieldset>
   </section>

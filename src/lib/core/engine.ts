@@ -45,6 +45,15 @@ const DEFAULT_OPTIONS: NormalizedRevealContainerOptions = {
   hover: {
     color: 'rgba(127, 225, 255, 0.2)',
   },
+  focus: {
+    enabled: true,
+    color: 'rgba(146, 220, 255, 0.76)',
+    widthPx: 2,
+    offsetPx: 3,
+    glowPx: 14,
+    pulseDurationMs: 1200,
+    zIndex: 12,
+  },
   click: {
     enabled: true,
     color: 'rgba(255, 249, 223, 0.54)',
@@ -100,6 +109,7 @@ function normalizeContainerOptions(
       ...DEFAULT_OPTIONS,
       border: { ...DEFAULT_OPTIONS.border },
       hover: { ...DEFAULT_OPTIONS.hover },
+      focus: { ...DEFAULT_OPTIONS.focus },
       click: {
         ...DEFAULT_OPTIONS.click,
         press: { ...DEFAULT_OPTIONS.click.press },
@@ -114,6 +124,7 @@ function normalizeContainerOptions(
 
   const border = options.border
   const hover = options.hover
+  const focus = options.focus
   const click = options.click
   const press = click?.press
   const ripple = click?.ripple
@@ -129,6 +140,20 @@ function normalizeContainerOptions(
     },
     hover: {
       color: hover?.color ?? DEFAULT_OPTIONS.hover.color,
+    },
+    focus: {
+      enabled: focus?.enabled ?? DEFAULT_OPTIONS.focus.enabled,
+      color: focus?.color ?? DEFAULT_OPTIONS.focus.color,
+      widthPx: clampNumber(focus?.widthPx, 0, 16, DEFAULT_OPTIONS.focus.widthPx),
+      offsetPx: clampNumber(focus?.offsetPx, 0, 24, DEFAULT_OPTIONS.focus.offsetPx),
+      glowPx: clampNumber(focus?.glowPx, 0, 64, DEFAULT_OPTIONS.focus.glowPx),
+      pulseDurationMs: clampNumber(
+        focus?.pulseDurationMs,
+        250,
+        4000,
+        DEFAULT_OPTIONS.focus.pulseDurationMs,
+      ),
+      zIndex: clampNumber(focus?.zIndex, 0, 1000, DEFAULT_OPTIONS.focus.zIndex),
     },
     click: {
       enabled: click?.enabled ?? DEFAULT_OPTIONS.click.enabled,
@@ -658,6 +683,13 @@ export class RevealContainerController {
     this.node.style.removeProperty('--reveal-border-fade-stop')
     this.node.style.removeProperty('--reveal-border-transition')
     this.node.style.removeProperty('--reveal-hover-color')
+    this.node.style.removeProperty('--reveal-focus-color')
+    this.node.style.removeProperty('--reveal-focus-width')
+    this.node.style.removeProperty('--reveal-focus-offset')
+    this.node.style.removeProperty('--reveal-focus-glow')
+    this.node.style.removeProperty('--reveal-focus-glow-soft')
+    this.node.style.removeProperty('--reveal-focus-pulse-duration')
+    this.node.style.removeProperty('--reveal-focus-z-index')
     this.node.style.removeProperty('--reveal-click-color')
     this.node.style.removeProperty('--reveal-press-scale')
     this.node.style.removeProperty('--reveal-press-transition')
@@ -672,6 +704,7 @@ export class RevealContainerController {
     this.node.style.removeProperty('--reveal-ripple-mid-strength')
     delete this.node.dataset.revealDebug
     delete this.node.dataset.revealRipple
+    delete this.node.dataset.revealFocus
 
     this.bordersByKey.clear()
     this.itemsByKey.clear()
@@ -978,6 +1011,13 @@ export class RevealContainerController {
     this.node.style.setProperty('--reveal-border-fade-stop', `${this.options.border.fadeStopPct}%`)
     this.node.style.setProperty('--reveal-border-transition', `${this.options.border.transitionMs}ms`)
     this.node.style.setProperty('--reveal-hover-color', this.options.hover.color)
+    this.node.style.setProperty('--reveal-focus-color', this.options.focus.color)
+    this.node.style.setProperty('--reveal-focus-width', `${this.options.focus.widthPx}px`)
+    this.node.style.setProperty('--reveal-focus-offset', `${this.options.focus.offsetPx}px`)
+    this.node.style.setProperty('--reveal-focus-glow', `${this.options.focus.glowPx}px`)
+    this.node.style.setProperty('--reveal-focus-glow-soft', `${Math.max(1, this.options.focus.glowPx * 0.55)}px`)
+    this.node.style.setProperty('--reveal-focus-pulse-duration', `${this.options.focus.pulseDurationMs}ms`)
+    this.node.style.setProperty('--reveal-focus-z-index', `${this.options.focus.zIndex}`)
     this.node.style.setProperty('--reveal-click-color', this.options.click.color)
     this.node.style.setProperty('--reveal-press-scale', `${this.options.click.press.scale}`)
     this.node.style.setProperty('--reveal-press-transition', `${this.options.click.press.transitionMs}ms`)
@@ -991,6 +1031,7 @@ export class RevealContainerController {
     this.node.style.setProperty('--reveal-ripple-core-strength', `${this.options.click.ripple.coreStrength}%`)
     this.node.style.setProperty('--reveal-ripple-mid-strength', `${this.options.click.ripple.midStrength}%`)
     this.node.dataset.revealRipple = this.options.click.ripple.enabled ? 'on' : 'off'
+    this.node.dataset.revealFocus = this.options.focus.enabled ? 'on' : 'off'
     if (this.options.debug) {
       this.node.dataset.revealDebug = 'true'
     } else {

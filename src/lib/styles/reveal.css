@@ -5,6 +5,13 @@
   --reveal-border-fade-stop: 72%;
   --reveal-border-transition: 180ms;
   --reveal-hover-color: rgba(127, 225, 255, 0.2);
+  --reveal-focus-color: rgba(146, 220, 255, 0.76);
+  --reveal-focus-width: 2px;
+  --reveal-focus-offset: 3px;
+  --reveal-focus-glow: 14px;
+  --reveal-focus-glow-soft: 8px;
+  --reveal-focus-pulse-duration: 1200ms;
+  --reveal-focus-z-index: 12;
   --reveal-click-color: rgba(255, 249, 223, 0.54);
   --reveal-press-scale: 0.98;
   --reveal-press-transition: 96ms;
@@ -120,6 +127,14 @@
   transform: scale(var(--reveal-press-scale));
 }
 
+.reveal-container[data-reveal-focus='on'] .reveal-item:focus-visible,
+.reveal-container[data-reveal-focus='on'] .reveal-item:has(:focus-visible) {
+  z-index: var(--reveal-focus-z-index);
+  outline: var(--reveal-focus-width) solid var(--reveal-focus-color);
+  outline-offset: var(--reveal-focus-offset);
+  animation: reveal-focus-pulse var(--reveal-focus-pulse-duration) ease-in-out infinite;
+}
+
 .reveal-item.reveal-ripple-active::after {
   animation: reveal-click-follow var(--reveal-ripple-duration) cubic-bezier(0.14, 0.76, 0.22, 1)
     forwards;
@@ -155,6 +170,20 @@
   }
 }
 
+@keyframes reveal-focus-pulse {
+  0%,
+  100% {
+    filter:
+      drop-shadow(0 0 var(--reveal-focus-glow-soft) var(--reveal-focus-color))
+      drop-shadow(0 0 var(--reveal-focus-glow-soft) var(--reveal-focus-color));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 var(--reveal-focus-glow) var(--reveal-focus-color))
+      drop-shadow(0 0 var(--reveal-focus-glow) var(--reveal-focus-color));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal-border-host::before,
   .reveal-item::before,
@@ -179,5 +208,11 @@
   .reveal-item.reveal-ripple-static::after {
     opacity: var(--reveal-ripple-end-opacity);
     transform: scale(var(--reveal-ripple-end-scale));
+  }
+
+  .reveal-container[data-reveal-focus='on'] .reveal-item:focus-visible,
+  .reveal-container[data-reveal-focus='on'] .reveal-item:has(:focus-visible) {
+    animation: none;
+    filter: drop-shadow(0 0 var(--reveal-focus-glow-soft) var(--reveal-focus-color));
   }
 }
