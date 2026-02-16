@@ -441,8 +441,10 @@
               click: true,
             }}
           >
-            <span>{button.label}</span>
-            <small>{button.id}</small>
+            <span class="reveal-press-content">
+              <span class="library-label">{button.label}</span>
+              <small>{button.id}</small>
+            </span>
           </button>
         </div>
       {:else}

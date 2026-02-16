@@ -296,7 +296,7 @@ body {
   -webkit-backdrop-filter: blur(10px) saturate(132%);
 }
 
-.demo-control span {
+.demo-control .control-label {
   font-weight: 600;
 }
 
@@ -510,7 +510,7 @@ body {
   color: #406170;
 }
 
-.library-button span {
+.library-button .library-label {
   font-weight: 580;
 }
 
