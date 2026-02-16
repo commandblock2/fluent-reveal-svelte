@@ -448,7 +448,7 @@ node demo.js
 
 ## Browser Compatibility Notes
 
-1. Require modern browser support for `mask-composite` / `-webkit-mask-composite` behavior used by the chosen CSS strategy.
+1. Require modern browser support for `mask-composite` behavior used by the chosen CSS strategy.
 2. If required features are missing, surface a clear dev warning and stop effect initialization.
 3. Ensure border radius inheritance works for both wrappers and inner controls.
 

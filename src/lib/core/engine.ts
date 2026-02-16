@@ -180,7 +180,7 @@ function supportsMaskComposite(): boolean {
     return false
   }
 
-  return CSS.supports('mask-composite', 'exclude') || CSS.supports('-webkit-mask-composite', 'xor')
+  return CSS.supports('mask-composite', 'exclude')
 }
 
 export function findNearestRevealContainer(node: HTMLElement | null): RevealContainerController | null {

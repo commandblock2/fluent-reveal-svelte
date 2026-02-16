@@ -1,47 +1,268 @@
-# Svelte + TS + Vite
+# fluent-reveal-svelte
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+Pointer-driven Fluent-style border, hover, and click reveal effects for Svelte.
 
-## Recommended IDE Setup
+The library exposes 3 actions:
+- `revealContainer`
+- `revealBorder`
+- `revealItem`
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+It uses fail-fast runtime checks and throws descriptive errors when DOM/action contracts are violated.
 
-## Need an official Svelte framework?
+## Install
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+```bash
+npm i fluent-reveal-svelte
+```
 
-## Technical considerations
-
-**Why use this over SvelteKit?**
-
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
-
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
-
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
-
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
-
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
-
-**Why include `.vscode/extensions.json`?**
-
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `allowJs` in the TS template?**
-
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
+Also import the reveal CSS once in your app entry or root layout.
 
 ```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
+import 'fluent-reveal-svelte/styles/reveal.css'
 ```
+
+If your package setup uses a different CSS path, import the bundled `reveal.css` from this repo.
+
+## Before You Use It
+
+### Required structure
+
+`revealItem` must be inside an ancestor using `revealContainer`.
+
+If `revealItem` has `border: true`, it must also have an ancestor using `revealBorder` (usually a wrapper around the item).
+
+### Required content wrapper for press scale
+
+Press scaling is applied to `.reveal-press-content`, not to the outer button node.  
+Wrap button content like this:
+
+```svelte
+<button use:revealItem={{ border: true, hover: true, click: true }}>
+  <span class="reveal-press-content">
+    <span>Label</span>
+  </span>
+</button>
+```
+
+### Browser capabilities
+
+The container will throw at runtime if required platform features are missing:
+- CSS `mask-composite`
+- `ResizeObserver`
+- `MutationObserver`
+
+## Minimal Example
+
+```svelte
+<script lang="ts">
+  import { revealBorder, revealContainer, revealItem, type RevealContainerOptions } from 'fluent-reveal-svelte'
+  import 'fluent-reveal-svelte/styles/reveal.css'
+
+  const options: RevealContainerOptions = {
+    border: {
+      radius: 96,
+      color: 'rgba(255, 178, 109, 0.94)',
+      widthPx: 1,
+      fadeStopPct: 72,
+      transitionMs: 180,
+    },
+    hover: {
+      color: 'rgba(115, 220, 255, 0.22)',
+    },
+    click: {
+      enabled: true,
+      color: 'rgba(255, 243, 213, 0.55)',
+      press: {
+        scale: 0.98,
+        transitionMs: 96,
+      },
+      ripple: {
+        enabled: true,
+        durationMs: 980,
+        sizePx: 24,
+        startScale: 0.2,
+        endScale: 3.2,
+        startOpacity: 0.52,
+        midOpacity: 0.2,
+        endOpacity: 0.18,
+        coreStrength: 74,
+        midStrength: 42,
+      },
+    },
+    cacheRects: true,
+  }
+</script>
+
+<section use:revealContainer={options}>
+  <div use:revealBorder>
+    <button
+      class="my-button"
+      use:revealItem={{ border: true, hover: true, click: true }}
+    >
+      <span class="reveal-press-content">
+        <span>Deploy</span>
+        <small>D P L</small>
+      </span>
+    </button>
+  </div>
+</section>
+
+<style>
+  .my-button {
+    border-radius: 12px;
+    border: 1px solid rgba(20, 35, 50, 0.16);
+    background: rgba(255, 255, 255, 0.35);
+    color: #15293a;
+    padding: 0.55rem 0.75rem;
+    display: flex;
+    width: 100%;
+  }
+
+  .my-button > .reveal-press-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+  }
+</style>
+```
+
+## Public API
+
+### `revealContainer`
+
+Attach to a parent region.
+
+```ts
+type RevealContainerOptions = {
+  enabled?: boolean
+  border?: {
+    radius?: number
+    color?: string
+    widthPx?: number
+    fadeStopPct?: number
+    transitionMs?: number
+  }
+  hover?: {
+    color?: string
+  }
+  click?: {
+    enabled?: boolean
+    color?: string
+    press?: {
+      scale?: number
+      transitionMs?: number
+    }
+    ripple?: {
+      enabled?: boolean
+      durationMs?: number
+      sizePx?: number
+      startScale?: number
+      endScale?: number
+      startOpacity?: number
+      midOpacity?: number
+      endOpacity?: number
+      coreStrength?: number
+      midStrength?: number
+    }
+  }
+  throttle?: 'raf'
+  cacheRects?: boolean
+  debug?: boolean
+}
+```
+
+#### Numeric ranges (clamped)
+
+| Option | Range | Default |
+| --- | --- | --- |
+| `border.radius` | `0..600` | `90` |
+| `border.widthPx` | `0..16` | `1` |
+| `border.fadeStopPct` | `10..100` | `72` |
+| `border.transitionMs` | `0..2000` | `180` |
+| `click.press.scale` | `0.8..1` | `0.98` |
+| `click.press.transitionMs` | `0..1000` | `96` |
+| `click.ripple.durationMs` | `120..4000` | `980` |
+| `click.ripple.sizePx` | `4..240` | `24` |
+| `click.ripple.startScale` | `0.05..2.5` | `0.2` |
+| `click.ripple.endScale` | `0.2..8` | `3.2` |
+| `click.ripple.startOpacity` | `0..1` | `0.52` |
+| `click.ripple.midOpacity` | `0..1` | `0.2` |
+| `click.ripple.endOpacity` | `0..1` | `0.18` |
+| `click.ripple.coreStrength` | `0..100` | `74` |
+| `click.ripple.midStrength` | `0..100` | `42` |
+
+Notes:
+- `throttle` currently supports only `'raf'`
+- `id` values are immutable once registered (`revealBorder` / `revealItem`)
+
+### `revealBorder`
+
+Attach to a wrapper element that should render the border effect.
+
+```ts
+type RevealBorderOptions = {
+  id?: string
+}
+```
+
+### `revealItem`
+
+Attach to interactive elements.
+
+```ts
+type RevealItemOptions = {
+  id?: string
+  border: boolean
+  hover: boolean
+  click: boolean
+}
+```
+
+Default behavior when options are omitted:
+- `border: false`
+- `hover: true`
+- `click: true`
+
+## Transparency Guidance
+
+Effects are composited overlays. Visual quality depends on your surface styling.
+
+Recommended:
+- Keep control backgrounds partially transparent (`rgba(..., 0.2..0.7)`) for richer hover/ripple blending.
+- Keep border hosts transparent.
+- Use consistent border radii between host and item.
+- Avoid stacking many strong opaque layers over the control if you want reveal to remain visible.
+
+## FAQ
+
+### 1) Do I need a separate div for the border effect?
+
+If `revealItem` uses `border: true`, yes, use an ancestor wrapper with `use:revealBorder`.  
+`revealItem` searches parent elements for a border host and throws if none is found.
+
+### 2) What about button content?
+
+Wrap content in `.reveal-press-content` if you want press scaling.  
+This keeps the outer button and border stable while content scales.
+
+### 3) How much should users worry about transparency?
+
+A lot for visual quality, not for correctness.  
+Opaque surfaces still work functionally, but reveal layers are less visible.
+
+### 4) Is there a minimal example?
+
+Yes, see the **Minimal Example** section above.
+
+## Common Errors
+
+- `[fluent-reveal] revealItem requires an ancestor with use:revealContainer.`
+  - Add `use:revealContainer` on a parent.
+- `[fluent-reveal] revealItem "<id>" has border=true but no registered revealBorder host was found.`
+  - Wrap the item with a `use:revealBorder` ancestor.
+
+## License
+
+GPL-3.0 (see `LICENSE`).

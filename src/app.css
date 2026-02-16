@@ -5,7 +5,6 @@
   color: #182633;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
@@ -53,7 +52,6 @@ body {
   border: 1px solid rgba(15, 30, 42, 0.12);
   box-shadow: 0 16px 40px rgba(30, 45, 58, 0.1);
   backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
 }
 
 .hero .eyebrow {
@@ -85,7 +83,6 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 0.9rem;
   backdrop-filter: blur(16px) saturate(145%);
-  -webkit-backdrop-filter: blur(16px) saturate(145%);
 }
 
 .knob-group {
@@ -155,7 +152,6 @@ body {
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(240, 248, 254, 0.22));
   box-shadow: 0 22px 52px rgba(16, 33, 48, 0.13);
   backdrop-filter: blur(24px) saturate(150%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
 }
 
 .surface::before {
@@ -197,7 +193,6 @@ body {
   align-content: start;
   animation: rise-in 360ms ease both;
   backdrop-filter: blur(14px) saturate(138%);
-  -webkit-backdrop-filter: blur(14px) saturate(138%);
 }
 
 .matrix-cell > .control-border,
@@ -240,7 +235,6 @@ body {
   background: linear-gradient(148deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0.18));
   padding: 0.85rem;
   backdrop-filter: blur(14px) saturate(138%);
-  -webkit-backdrop-filter: blur(14px) saturate(138%);
 }
 
 .toolbar header {
@@ -293,7 +287,6 @@ body {
   background: linear-gradient(156deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.26));
   box-shadow: inset 0 0 0 1px rgba(18, 36, 51, 0.1);
   backdrop-filter: blur(10px) saturate(132%);
-  -webkit-backdrop-filter: blur(10px) saturate(132%);
 }
 
 .demo-control .control-label {
@@ -342,7 +335,6 @@ body {
   background: rgba(255, 255, 255, 0.36);
   color: inherit;
   backdrop-filter: blur(10px) saturate(130%);
-  -webkit-backdrop-filter: blur(10px) saturate(130%);
 }
 
 .toggle-control {
@@ -373,7 +365,6 @@ body {
   display: grid;
   gap: 0.8rem;
   backdrop-filter: blur(16px) saturate(138%);
-  -webkit-backdrop-filter: blur(16px) saturate(138%);
 }
 
 .library::before {
@@ -430,7 +421,6 @@ body {
   color: inherit;
   background: rgba(255, 255, 255, 0.34);
   backdrop-filter: blur(10px) saturate(128%);
-  -webkit-backdrop-filter: blur(10px) saturate(128%);
 }
 
 .library-search input:focus-visible {
@@ -452,7 +442,6 @@ body {
   border: 1px solid rgba(17, 45, 60, 0.09);
   background: transparent;
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
   min-block-size: 260px;
   max-block-size: 420px;
   overflow: auto;
@@ -483,7 +472,6 @@ body {
     inset 0 0 0 1px rgba(255, 255, 255, 0.08),
     0 2px 8px rgba(16, 39, 54, 0.03);
   backdrop-filter: blur(6px) saturate(124%);
-  -webkit-backdrop-filter: blur(6px) saturate(124%);
   cursor: pointer;
   transition:
     transform 120ms ease,
