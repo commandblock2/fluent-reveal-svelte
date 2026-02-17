@@ -3,6 +3,25 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "svelte": "./src/lib/index.ts",
+  "types": "./src/lib/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/lib/index.ts",
+      "svelte": "./src/lib/index.ts",
+      "default": "./src/lib/index.ts"
+    },
+    "./styles/reveal.css": "./src/lib/styles/reveal.css"
+  },
+  "files": [
+    "src/lib",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "peerDependencies": {
+    "svelte": "^5.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
