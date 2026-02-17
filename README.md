@@ -69,6 +69,14 @@ The container will throw at runtime if required platform features are missing:
     hover: {
       color: 'rgba(115, 220, 255, 0.22)',
     },
+    focus: {
+      enabled: true,
+      color: 'rgba(146, 220, 255, 0.76)',
+      widthPx: 2,
+      offsetPx: 3,
+      glowPx: 14,
+      zIndex: 12,
+    },
     click: {
       enabled: true,
       color: 'rgba(255, 243, 213, 0.55)',
@@ -147,6 +155,14 @@ type RevealContainerOptions = {
   hover?: {
     color?: string
   }
+  focus?: {
+    enabled?: boolean
+    color?: string
+    widthPx?: number
+    offsetPx?: number
+    glowPx?: number
+    zIndex?: number
+  }
   click?: {
     enabled?: boolean
     color?: string
@@ -181,6 +197,10 @@ type RevealContainerOptions = {
 | `border.widthPx` | `0..16` | `1` |
 | `border.fadeStopPct` | `10..100` | `72` |
 | `border.transitionMs` | `0..2000` | `180` |
+| `focus.widthPx` | `0..16` | `2` |
+| `focus.offsetPx` | `0..24` | `3` |
+| `focus.glowPx` | `0..64` | `14` |
+| `focus.zIndex` | `0..1000` | `12` |
 | `click.press.scale` | `0.8..1` | `0.98` |
 | `click.press.transitionMs` | `0..1000` | `96` |
 | `click.ripple.durationMs` | `120..4000` | `980` |

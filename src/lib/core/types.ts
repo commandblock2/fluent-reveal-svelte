@@ -18,7 +18,6 @@ export type RevealFocusEffectOptions = {
   widthPx?: number
   offsetPx?: number
   glowPx?: number
-  pulseDurationMs?: number
   zIndex?: number
 }
 
@@ -87,7 +86,6 @@ export type NormalizedRevealContainerOptions = {
     widthPx: number
     offsetPx: number
     glowPx: number
-    pulseDurationMs: number
     zIndex: number
   }
   click: {

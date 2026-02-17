@@ -302,8 +302,7 @@ body {
 .demo-control:focus-visible,
 .demo-control input:focus-visible,
 .demo-control select:focus-visible {
-  outline: 2px solid #0e7a97;
-  outline-offset: 2px;
+  outline: none;
 }
 
 .button-control,
@@ -514,8 +513,7 @@ body {
 }
 
 .library-button:focus-visible {
-  outline: 2px solid #0d7a97;
-  outline-offset: 2px;
+  outline: none;
 }
 
 .library-empty {

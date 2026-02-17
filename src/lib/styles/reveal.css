@@ -10,7 +10,6 @@
   --reveal-focus-offset: 3px;
   --reveal-focus-glow: 14px;
   --reveal-focus-glow-soft: 8px;
-  --reveal-focus-pulse-duration: 1200ms;
   --reveal-focus-z-index: 12;
   --reveal-click-color: rgba(255, 249, 223, 0.54);
   --reveal-press-scale: 0.98;
@@ -127,12 +126,13 @@
   transform: scale(var(--reveal-press-scale));
 }
 
-.reveal-container[data-reveal-focus='on'] .reveal-item:focus-visible,
-.reveal-container[data-reveal-focus='on'] .reveal-item:has(:focus-visible) {
+.reveal-container[data-reveal-focus='on'] .reveal-item.reveal-focus-visible {
   z-index: var(--reveal-focus-z-index);
   outline: var(--reveal-focus-width) solid var(--reveal-focus-color);
   outline-offset: var(--reveal-focus-offset);
-  animation: reveal-focus-pulse var(--reveal-focus-pulse-duration) ease-in-out infinite;
+  box-shadow:
+    0 0 var(--reveal-focus-glow-soft) var(--reveal-focus-color),
+    0 0 var(--reveal-focus-glow) var(--reveal-focus-color);
 }
 
 .reveal-item.reveal-ripple-active::after {
@@ -170,20 +170,6 @@
   }
 }
 
-@keyframes reveal-focus-pulse {
-  0%,
-  100% {
-    filter:
-      drop-shadow(0 0 var(--reveal-focus-glow-soft) var(--reveal-focus-color))
-      drop-shadow(0 0 var(--reveal-focus-glow-soft) var(--reveal-focus-color));
-  }
-  50% {
-    filter:
-      drop-shadow(0 0 var(--reveal-focus-glow) var(--reveal-focus-color))
-      drop-shadow(0 0 var(--reveal-focus-glow) var(--reveal-focus-color));
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .reveal-border-host::before,
   .reveal-item::before,
@@ -210,9 +196,9 @@
     transform: scale(var(--reveal-ripple-end-scale));
   }
 
-  .reveal-container[data-reveal-focus='on'] .reveal-item:focus-visible,
-  .reveal-container[data-reveal-focus='on'] .reveal-item:has(:focus-visible) {
-    animation: none;
-    filter: drop-shadow(0 0 var(--reveal-focus-glow-soft) var(--reveal-focus-color));
+  .reveal-container[data-reveal-focus='on'] .reveal-item.reveal-focus-visible {
+    box-shadow:
+      0 0 var(--reveal-focus-glow-soft) var(--reveal-focus-color),
+      0 0 var(--reveal-focus-glow) var(--reveal-focus-color);
   }
 }

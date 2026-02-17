@@ -56,7 +56,6 @@
     widthPx: 2,
     offsetPx: 3,
     glowPx: 14,
-    pulseDurationMs: 1200,
     zIndex: 12,
   })
 
@@ -126,7 +125,6 @@
       widthPx: focusSettings.widthPx,
       offsetPx: focusSettings.offsetPx,
       glowPx: focusSettings.glowPx,
-      pulseDurationMs: focusSettings.pulseDurationMs,
       zIndex: focusSettings.zIndex,
     },
     click: {
@@ -403,12 +401,6 @@
         Focus glow radius
         <input type="range" min="0" max="64" step="1" bind:value={focusSettings.glowPx} />
         <span>{focusSettings.glowPx}px</span>
-      </label>
-
-      <label>
-        Focus pulse duration
-        <input type="range" min="250" max="4000" step="10" bind:value={focusSettings.pulseDurationMs} />
-        <span>{focusSettings.pulseDurationMs}ms</span>
       </label>
 
       <label>

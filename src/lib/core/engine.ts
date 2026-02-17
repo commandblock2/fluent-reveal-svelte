@@ -51,7 +51,6 @@ const DEFAULT_OPTIONS: NormalizedRevealContainerOptions = {
     widthPx: 2,
     offsetPx: 3,
     glowPx: 14,
-    pulseDurationMs: 1200,
     zIndex: 12,
   },
   click: {
@@ -147,12 +146,6 @@ function normalizeContainerOptions(
       widthPx: clampNumber(focus?.widthPx, 0, 16, DEFAULT_OPTIONS.focus.widthPx),
       offsetPx: clampNumber(focus?.offsetPx, 0, 24, DEFAULT_OPTIONS.focus.offsetPx),
       glowPx: clampNumber(focus?.glowPx, 0, 64, DEFAULT_OPTIONS.focus.glowPx),
-      pulseDurationMs: clampNumber(
-        focus?.pulseDurationMs,
-        250,
-        4000,
-        DEFAULT_OPTIONS.focus.pulseDurationMs,
-      ),
       zIndex: clampNumber(focus?.zIndex, 0, 1000, DEFAULT_OPTIONS.focus.zIndex),
     },
     click: {
@@ -252,6 +245,7 @@ export class RevealContainerController {
   private rectCacheDirty = true
   private lastPointer: PointerSnapshot | null = null
   private hoveredItemKey: string | null = null
+  private focusedItemKey: string | null = null
   private pressedItemKey: string | null = null
   private containerRect: DOMRectReadOnly
   private destroyed = false
@@ -359,6 +353,80 @@ export class RevealContainerController {
     }
   }
 
+  private readonly onFocusIn = (event: FocusEvent): void => {
+    if (!this.options.enabled || !this.options.focus.enabled) {
+      this.clearFocusState()
+      return
+    }
+
+    const target = event.target
+    if (!(target instanceof HTMLElement) || !target.matches(':focus-visible')) {
+      this.clearFocusState()
+      return
+    }
+
+    const nextFocusKey = this.resolveItemKeyFromTarget(target, () => true)
+    if (!nextFocusKey) {
+      this.clearFocusState()
+      return
+    }
+
+    if (nextFocusKey === this.focusedItemKey) {
+      return
+    }
+
+    if (this.focusedItemKey) {
+      const previous = this.itemsByKey.get(this.focusedItemKey)
+      previous?.node.classList.remove('reveal-focus-visible')
+    }
+
+    const nextFocused = this.itemsByKey.get(nextFocusKey)
+    if (!nextFocused) {
+      this.clearFocusState()
+      return
+    }
+
+    nextFocused.node.classList.add('reveal-focus-visible')
+    this.focusedItemKey = nextFocusKey
+  }
+
+  private readonly onFocusOut = (event: FocusEvent): void => {
+    if (!this.options.enabled || !this.options.focus.enabled) {
+      this.clearFocusState()
+      return
+    }
+
+    const nextTarget = event.relatedTarget
+    if (!(nextTarget instanceof HTMLElement) || !nextTarget.matches(':focus-visible')) {
+      this.clearFocusState()
+      return
+    }
+
+    const nextFocusKey = this.resolveItemKeyFromTarget(nextTarget, () => true)
+    if (!nextFocusKey) {
+      this.clearFocusState()
+      return
+    }
+
+    if (nextFocusKey === this.focusedItemKey) {
+      return
+    }
+
+    if (this.focusedItemKey) {
+      const previous = this.itemsByKey.get(this.focusedItemKey)
+      previous?.node.classList.remove('reveal-focus-visible')
+    }
+
+    const nextFocused = this.itemsByKey.get(nextFocusKey)
+    if (!nextFocused) {
+      this.clearFocusState()
+      return
+    }
+
+    nextFocused.node.classList.add('reveal-focus-visible')
+    this.focusedItemKey = nextFocusKey
+  }
+
   private readonly onWindowLayoutShift = (): void => {
     this.invalidateLayout()
   }
@@ -403,6 +471,9 @@ export class RevealContainerController {
       this.clearRippleState()
     } else if (!this.options.click.ripple.enabled) {
       this.clearRippleState()
+    }
+    if (!this.options.focus.enabled) {
+      this.clearFocusState()
     }
     this.invalidateLayout()
     this.scheduleFrame()
@@ -584,6 +655,11 @@ export class RevealContainerController {
       }
     }
 
+    if (this.focusedItemKey === record.key) {
+      record.node.classList.remove('reveal-focus-visible')
+      this.focusedItemKey = null
+    }
+
     this.invalidateLayout()
     this.scheduleFrame()
   }
@@ -611,10 +687,14 @@ export class RevealContainerController {
     if (this.pressedItemKey === key) {
       this.pressedItemKey = null
     }
+    if (this.focusedItemKey === key) {
+      this.focusedItemKey = null
+    }
 
     record.node.classList.remove(
       'reveal-item',
       'reveal-hover',
+      'reveal-focus-visible',
       'reveal-pressed',
       'reveal-ripple-active',
       'reveal-ripple-static',
@@ -650,6 +730,7 @@ export class RevealContainerController {
     this.mutationObserver.disconnect()
     this.clearBorderVisibility()
     this.clearHoverState()
+    this.clearFocusState()
     this.clearPressedState()
     this.clearRippleState()
 
@@ -664,6 +745,7 @@ export class RevealContainerController {
       item.node.classList.remove(
         'reveal-item',
         'reveal-hover',
+        'reveal-focus-visible',
         'reveal-pressed',
         'reveal-ripple-active',
         'reveal-ripple-static',
@@ -688,7 +770,6 @@ export class RevealContainerController {
     this.node.style.removeProperty('--reveal-focus-offset')
     this.node.style.removeProperty('--reveal-focus-glow')
     this.node.style.removeProperty('--reveal-focus-glow-soft')
-    this.node.style.removeProperty('--reveal-focus-pulse-duration')
     this.node.style.removeProperty('--reveal-focus-z-index')
     this.node.style.removeProperty('--reveal-click-color')
     this.node.style.removeProperty('--reveal-press-scale')
@@ -722,6 +803,8 @@ export class RevealContainerController {
     this.node.addEventListener('pointerup', this.onPointerUp)
     this.node.addEventListener('pointercancel', this.onPointerCancel)
     this.node.addEventListener('animationend', this.onAnimationEnd)
+    this.node.addEventListener('focusin', this.onFocusIn)
+    this.node.addEventListener('focusout', this.onFocusOut)
     window.addEventListener('pointerup', this.onPointerUp, { passive: true })
     window.addEventListener('pointercancel', this.onPointerCancel, { passive: true })
     window.addEventListener('resize', this.onWindowLayoutShift, { passive: true })
@@ -736,6 +819,8 @@ export class RevealContainerController {
     this.node.removeEventListener('pointerup', this.onPointerUp)
     this.node.removeEventListener('pointercancel', this.onPointerCancel)
     this.node.removeEventListener('animationend', this.onAnimationEnd)
+    this.node.removeEventListener('focusin', this.onFocusIn)
+    this.node.removeEventListener('focusout', this.onFocusOut)
     window.removeEventListener('pointerup', this.onPointerUp)
     window.removeEventListener('pointercancel', this.onPointerCancel)
     window.removeEventListener('resize', this.onWindowLayoutShift)
@@ -790,6 +875,7 @@ export class RevealContainerController {
     if (this.destroyed || !this.options.enabled) {
       this.clearBorderVisibility()
       this.clearHoverState()
+      this.clearFocusState()
       this.clearPressedState()
       return
     }
@@ -988,6 +1074,16 @@ export class RevealContainerController {
     this.hoveredItemKey = null
   }
 
+  private clearFocusState(): void {
+    if (!this.focusedItemKey) {
+      return
+    }
+
+    const focused = this.itemsByKey.get(this.focusedItemKey)
+    focused?.node.classList.remove('reveal-focus-visible')
+    this.focusedItemKey = null
+  }
+
   private clearPressedState(): void {
     if (!this.pressedItemKey) {
       return
@@ -1016,7 +1112,6 @@ export class RevealContainerController {
     this.node.style.setProperty('--reveal-focus-offset', `${this.options.focus.offsetPx}px`)
     this.node.style.setProperty('--reveal-focus-glow', `${this.options.focus.glowPx}px`)
     this.node.style.setProperty('--reveal-focus-glow-soft', `${Math.max(1, this.options.focus.glowPx * 0.55)}px`)
-    this.node.style.setProperty('--reveal-focus-pulse-duration', `${this.options.focus.pulseDurationMs}ms`)
     this.node.style.setProperty('--reveal-focus-z-index', `${this.options.focus.zIndex}`)
     this.node.style.setProperty('--reveal-click-color', this.options.click.color)
     this.node.style.setProperty('--reveal-press-scale', `${this.options.click.press.scale}`)
