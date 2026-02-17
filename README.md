@@ -37,6 +37,24 @@ npm install
 npm run dev
 ```
 
+## Demo Deployment (GitHub Pages)
+
+This repo can publish the demo page to:
+
+`https://commandblock2.github.io/fluent-reveal-svelte/`
+
+CI workflow:
+- `.github/workflows/deploy-pages.yml`
+- triggers on push to `main` and manual runs
+- uses `npm run build:pages` (Vite base path `/fluent-reveal-svelte/`)
+
+One-time GitHub setup:
+1. Open repository `Settings`.
+2. Open `Pages`.
+3. Set `Build and deployment` source to `GitHub Actions`.
+
+After that, each push to `main` deploys the latest demo.
+
 ## Before You Use It
 
 ### Required structure
