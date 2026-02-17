@@ -286,3 +286,5 @@ Yes, see the **Minimal Example** section above.
 ## License
 
 GPL-3.0 (see `LICENSE`).
+
+Third-party asset notices are listed in `THIRD_PARTY_NOTICES.md`.
