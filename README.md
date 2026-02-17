@@ -23,6 +23,20 @@ import 'fluent-reveal-svelte/styles/reveal.css'
 
 If your package setup uses a different CSS path, import the bundled `reveal.css` from this repo.
 
+## Published Package Example
+
+A minimal consumer app is available at `examples/package-minimal`.
+
+It installs `fluent-reveal-svelte` from npm and enables border, hover, focus, and click effects on 5 buttons.
+
+Run it with:
+
+```bash
+cd examples/package-minimal
+npm install
+npm run dev
+```
+
 ## Before You Use It
 
 ### Required structure
