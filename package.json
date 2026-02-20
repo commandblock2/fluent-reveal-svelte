@@ -1,6 +1,6 @@
 {
   "name": "fluent-reveal-svelte",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "svelte": "./src/lib/index.ts",
   "types": "./src/lib/index.ts",

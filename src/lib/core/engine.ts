@@ -805,10 +805,13 @@ export class RevealContainerController {
     this.node.addEventListener('animationend', this.onAnimationEnd)
     this.node.addEventListener('focusin', this.onFocusIn)
     this.node.addEventListener('focusout', this.onFocusOut)
+    // Scroll events on overflow containers do not bubble to window.
+    // Listen on the container itself so border/item rects stay aligned while scrolling.
+    this.node.addEventListener('scroll', this.onWindowLayoutShift, { passive: true })
     window.addEventListener('pointerup', this.onPointerUp, { passive: true })
     window.addEventListener('pointercancel', this.onPointerCancel, { passive: true })
     window.addEventListener('resize', this.onWindowLayoutShift, { passive: true })
-    window.addEventListener('scroll', this.onWindowLayoutShift, { passive: true })
+    window.addEventListener('scroll', this.onWindowLayoutShift, { passive: true, capture: true })
   }
 
   private unbindListeners(): void {
@@ -821,10 +824,11 @@ export class RevealContainerController {
     this.node.removeEventListener('animationend', this.onAnimationEnd)
     this.node.removeEventListener('focusin', this.onFocusIn)
     this.node.removeEventListener('focusout', this.onFocusOut)
+    this.node.removeEventListener('scroll', this.onWindowLayoutShift)
     window.removeEventListener('pointerup', this.onPointerUp)
     window.removeEventListener('pointercancel', this.onPointerCancel)
     window.removeEventListener('resize', this.onWindowLayoutShift)
-    window.removeEventListener('scroll', this.onWindowLayoutShift)
+    window.removeEventListener('scroll', this.onWindowLayoutShift, true)
   }
 
   private normalizeRegistrationId(id: string | undefined, kind: RegistrationKind): string {

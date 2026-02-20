@@ -65,5 +65,33 @@ describe('RevealContainerController invariants', () => {
     controller.destroy()
     containerNode.remove()
   })
-})
 
+  it('listens to container scroll and capture-phase window scroll', () => {
+    const containerNode = document.createElement('section')
+    document.body.appendChild(containerNode)
+
+    const nodeAddSpy = vi.spyOn(containerNode, 'addEventListener')
+    const nodeRemoveSpy = vi.spyOn(containerNode, 'removeEventListener')
+    const windowAddSpy = vi.spyOn(window, 'addEventListener')
+    const windowRemoveSpy = vi.spyOn(window, 'removeEventListener')
+
+    const controller = createRevealContainer(containerNode)
+
+    expect(nodeAddSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { passive: true })
+    expect(windowAddSpy).toHaveBeenCalledWith('scroll', expect.any(Function), {
+      passive: true,
+      capture: true,
+    })
+
+    controller.destroy()
+
+    expect(nodeRemoveSpy).toHaveBeenCalledWith('scroll', expect.any(Function))
+    expect(windowRemoveSpy).toHaveBeenCalledWith('scroll', expect.any(Function), true)
+
+    nodeAddSpy.mockRestore()
+    nodeRemoveSpy.mockRestore()
+    windowAddSpy.mockRestore()
+    windowRemoveSpy.mockRestore()
+    containerNode.remove()
+  })
+})
