@@ -37,6 +37,18 @@ npm install
 npm run dev
 ```
 
+## Benchmark
+
+Run the engine micro-benchmark:
+
+```bash
+npm run bench
+```
+
+It compares render-loop cost for:
+- 300 visible controls
+- 300 controls with only 12 in viewport (offscreen controls are culled)
+
 ## Demo Deployment (GitHub Pages)
 
 This repo can publish the demo page to:

@@ -19,6 +19,7 @@ type BorderRecord = {
   owner: symbol
   node: HTMLElement
   rect: DOMRectReadOnly
+  inViewport: boolean
   visible: boolean
   activeBorderItems: number
 }
@@ -29,6 +30,7 @@ type ItemRecord = {
   owner: symbol
   node: HTMLElement
   rect: DOMRectReadOnly
+  inViewport: boolean
   flags: RevealItemOptions
   borderHostKey: string | null
 }
@@ -201,6 +203,15 @@ function supportsMaskComposite(): boolean {
   return CSS.supports('mask-composite', 'exclude')
 }
 
+function intersectsViewport(rect: DOMRectReadOnly): boolean {
+  return (
+    rect.right > 0 &&
+    rect.bottom > 0 &&
+    rect.left < window.innerWidth &&
+    rect.top < window.innerHeight
+  )
+}
+
 export function findNearestRevealContainer(node: HTMLElement | null): RevealContainerController | null {
   let current: HTMLElement | null = node
   while (current) {
@@ -239,6 +250,7 @@ export class RevealContainerController {
   private readonly registrationIds = new Map<string, RegistrationKind>()
   private readonly resizeObserver: ResizeObserver
   private readonly mutationObserver: MutationObserver
+  private readonly visibilityObserver: IntersectionObserver | null
   private borderCounter = 0
   private itemCounter = 0
   private rafId = 0
@@ -280,10 +292,11 @@ export class RevealContainerController {
       return
     }
 
+    const pointerTargetKey = this.resolveItemKeyFromTarget(event.target, () => true)
     if (!this.options.cacheRects) {
-      this.refreshRects()
+      this.refreshRects(pointerTargetKey)
     } else if (this.rectCacheDirty) {
-      this.refreshRects()
+      this.refreshRects(pointerTargetKey)
     }
 
     this.lastPointer = {
@@ -431,6 +444,62 @@ export class RevealContainerController {
     this.invalidateLayout()
   }
 
+  private readonly onVisibilityChange = (entries: IntersectionObserverEntry[]): void => {
+    if (this.destroyed) {
+      return
+    }
+
+    let changed = false
+
+    for (const entry of entries) {
+      const inViewport = entry.isIntersecting
+      const borderKey = this.borderKeyByNode.get(entry.target)
+      if (borderKey) {
+        const border = this.bordersByKey.get(borderKey)
+        if (!border || border.inViewport === inViewport) {
+          continue
+        }
+
+        border.inViewport = inViewport
+        if (!inViewport && border.visible) {
+          border.visible = false
+          border.node.classList.remove('reveal-visible')
+        }
+
+        changed = true
+        continue
+      }
+
+      const itemKey = this.itemKeyByNode.get(entry.target)
+      if (!itemKey) {
+        continue
+      }
+
+      const item = this.itemsByKey.get(itemKey)
+      if (!item || item.inViewport === inViewport) {
+        continue
+      }
+
+      item.inViewport = inViewport
+      if (!inViewport) {
+        if (this.hoveredItemKey === item.key) {
+          item.node.classList.remove('reveal-hover')
+          this.hoveredItemKey = null
+        }
+
+        if (this.pressedItemKey === item.key) {
+          this.clearPressedState()
+        }
+      }
+
+      changed = true
+    }
+
+    if (changed) {
+      this.invalidateLayout()
+    }
+  }
+
   constructor(node: HTMLElement, options?: RevealContainerOptions) {
     if (typeof window === 'undefined') {
       fail('revealContainer requires a browser runtime.')
@@ -454,6 +523,10 @@ export class RevealContainerController {
     this.mutationObserver = new MutationObserver(() => {
       this.invalidateLayout()
     })
+    this.visibilityObserver =
+      typeof IntersectionObserver === 'undefined'
+        ? null
+        : new IntersectionObserver(this.onVisibilityChange, { threshold: 0 })
 
     this.node.classList.add('reveal-container')
     this.applyContainerOptions()
@@ -498,9 +571,11 @@ export class RevealContainerController {
       owner,
       node,
       rect: node.getBoundingClientRect(),
+      inViewport: true,
       visible: false,
       activeBorderItems: 0,
     }
+    record.inViewport = this.visibilityObserver ? intersectsViewport(record.rect) : true
 
     this.bordersByKey.set(key, record)
     this.borderKeyByNode.set(node, key)
@@ -509,6 +584,7 @@ export class RevealContainerController {
 
     node.classList.add('reveal-border-host')
     this.resizeObserver.observe(node)
+    this.visibilityObserver?.observe(node)
     this.invalidateLayout()
     this.scheduleFrame()
   }
@@ -561,6 +637,7 @@ export class RevealContainerController {
     record.node.style.removeProperty('--reveal-host-top')
 
     this.resizeObserver.unobserve(record.node)
+    this.visibilityObserver?.unobserve(record.node)
     this.bordersByKey.delete(key)
     this.borderOwnerToKey.delete(owner)
     this.borderKeyByNode.delete(record.node)
@@ -594,9 +671,11 @@ export class RevealContainerController {
       owner,
       node,
       rect: node.getBoundingClientRect(),
+      inViewport: true,
       flags: normalized,
       borderHostKey,
     }
+    record.inViewport = this.visibilityObserver ? intersectsViewport(record.rect) : true
 
     this.itemsByKey.set(key, record)
     this.itemKeyByNode.set(node, key)
@@ -605,6 +684,7 @@ export class RevealContainerController {
 
     node.classList.add('reveal-item')
     this.resizeObserver.observe(node)
+    this.visibilityObserver?.observe(node)
     this.invalidateLayout()
     this.scheduleFrame()
   }
@@ -705,6 +785,7 @@ export class RevealContainerController {
     record.node.style.removeProperty('--click-origin-y')
 
     this.resizeObserver.unobserve(record.node)
+    this.visibilityObserver?.unobserve(record.node)
     this.itemsByKey.delete(key)
     this.itemOwnerToKey.delete(owner)
     this.itemKeyByNode.delete(record.node)
@@ -728,6 +809,7 @@ export class RevealContainerController {
     this.unbindListeners()
     this.resizeObserver.disconnect()
     this.mutationObserver.disconnect()
+    this.visibilityObserver?.disconnect()
     this.clearBorderVisibility()
     this.clearHoverState()
     this.clearFocusState()
@@ -884,11 +966,13 @@ export class RevealContainerController {
       return
     }
 
+    const pointer = this.lastPointer
+    const pointerTargetKey = pointer ? this.resolveItemKeyFromTarget(pointer.target, () => true) : null
+
     if (!this.options.cacheRects || this.rectCacheDirty) {
-      this.refreshRects()
+      this.refreshRects(pointerTargetKey)
     }
 
-    const pointer = this.lastPointer
     if (!pointer) {
       this.clearBorderVisibility()
       this.clearHoverState()
@@ -905,7 +989,7 @@ export class RevealContainerController {
     this.node.style.setProperty('--fx-y', `${pointer.y - this.containerRect.top}px`)
 
     for (const border of this.bordersByKey.values()) {
-      if (border.activeBorderItems === 0) {
+      if (!border.inViewport || border.activeBorderItems === 0) {
         if (border.visible) {
           border.visible = false
           border.node.classList.remove('reveal-visible')
@@ -929,16 +1013,28 @@ export class RevealContainerController {
     this.updatePressedPointer(pointer)
   }
 
-  private refreshRects(): void {
+  private refreshRects(pointerTargetKey: string | null = null): void {
     this.containerRect = this.node.getBoundingClientRect()
 
     for (const border of this.bordersByKey.values()) {
+      if (!border.inViewport) {
+        continue
+      }
       border.rect = border.node.getBoundingClientRect()
       border.node.style.setProperty('--reveal-host-left', `${border.rect.left - this.containerRect.left}px`)
       border.node.style.setProperty('--reveal-host-top', `${border.rect.top - this.containerRect.top}px`)
     }
 
     for (const item of this.itemsByKey.values()) {
+      if (
+        !item.inViewport &&
+        item.key !== this.hoveredItemKey &&
+        item.key !== this.focusedItemKey &&
+        item.key !== this.pressedItemKey &&
+        item.key !== pointerTargetKey
+      ) {
+        continue
+      }
       item.rect = item.node.getBoundingClientRect()
     }
 
